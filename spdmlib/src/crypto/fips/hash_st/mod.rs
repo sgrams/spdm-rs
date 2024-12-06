@@ -9,11 +9,12 @@ use std::{vec::Vec, vec};
 use super::hash;
 use crate::protocol::SpdmBaseHashAlgo;
 
-use crate::crypto::fips::SelfTestError;
-use crate::crypto::fips::cavs_vectors::sha256; 
+use crate::error::{SpdmResult, SPDM_STATUS_FIPS_SELF_TEST_FAIL};
+
+use crate::crypto::fips::cavs_vectors::sha256;
 
 
-pub fn run_self_test() -> Result<(), SelfTestError> {
+pub fn run_self_tests() -> SpdmResult {
 
     let cavs_vectors = sha256::get_cavs_vectors();
     for cv in cavs_vectors.iter() {
@@ -25,7 +26,7 @@ pub fn run_self_test() -> Result<(), SelfTestError> {
         // assert_eq!(res.as_ref(), &cv.md);
 
         if res.as_ref() != &cv.md {
-            return Err(SelfTestError::SelfTestFailed);
+            return Err(SPDM_STATUS_FIPS_SELF_TEST_FAIL);
         }
     }
 
