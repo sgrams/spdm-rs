@@ -116,6 +116,7 @@ impl RequesterContext {
         session_id: u32,
         in_clear_text: bool,
     ) -> SpdmResult {
+        info!("!!! receive finish !!!");
         let mut receive_buffer = [0u8; config::MAX_SPDM_MSG_SIZE];
         let res = if in_clear_text {
             self.receive_message(None, &mut receive_buffer, false).await
