@@ -120,9 +120,15 @@ type GenerateKeyPairCb = fn(
     dhe_algo: SpdmDheAlgo,
 ) -> Option<(SpdmDheExchangeStruct, Box<dyn SpdmDheKeyExchange + Send>)>;
 
+type ImportPrivateKeyCb = fn(
+    dhe_algo: SpdmDheAlgo,
+    private_key_data: &[u8],
+) -> Option<Box<dyn SpdmDheKeyExchange + Send>>;
+
 #[derive(Clone)]
 pub struct SpdmDhe {
     pub generate_key_pair_cb: GenerateKeyPairCb,
+    pub import_private_key_cb: Option<ImportPrivateKeyCb>,
 }
 
 pub trait SpdmDheKeyExchange {
@@ -130,6 +136,12 @@ pub trait SpdmDheKeyExchange {
         self: Box<Self>,
         peer_pub_key: &SpdmDheExchangeStruct,
     ) -> Option<SpdmSharedSecretFinalKeyStruct>;
+
+    /// Export private key bytes for serialization (checkpoint support)
+    /// Returns algorithm-specific private key data
+    fn export_private_key(&self) -> Option<alloc::vec::Vec<u8>> {
+        None // Default: not supported
+    }
 }
 
 type KemGenerateKeyPairCb = fn(
