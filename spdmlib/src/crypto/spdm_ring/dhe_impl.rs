@@ -99,7 +99,7 @@ impl SpdmDheKeyExchangeP256 {
         if private_key_bytes.len() != 32 {
             return None;
         }
-        let private_key = ring::agreement::EphemeralPrivateKey::from_bytes_for_test(
+        let private_key = ring::agreement::EphemeralPrivateKey::from_private_key_bytes(
             &ring::agreement::ECDH_P256,
             private_key_bytes,
         )
@@ -168,7 +168,7 @@ impl SpdmDheKeyExchangeP384 {
         if private_key_bytes.len() != 48 {
             return None;
         }
-        let private_key = ring::agreement::EphemeralPrivateKey::from_bytes_for_test(
+        let private_key = ring::agreement::EphemeralPrivateKey::from_private_key_bytes(
             &ring::agreement::ECDH_P384,
             private_key_bytes,
         )
