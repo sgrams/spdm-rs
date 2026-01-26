@@ -342,6 +342,16 @@ pub mod dhe {
             .ok()?
             .generate_key_pair_cb)(dhe_algo)
     }
+
+    /// Import a private key from serialized bytes for checkpoint/resume
+    pub fn import_private_key(
+        dhe_algo: SpdmDheAlgo,
+        private_key_bytes: &[u8],
+    ) -> Option<Box<dyn SpdmDheKeyExchange + Send>> {
+        let crypto_dhe = CRYPTO_DHE.try_get_or_init(|| DEFAULT.clone()).ok()?;
+        let import_cb = crypto_dhe.import_private_key_cb?;
+        import_cb(dhe_algo, private_key_bytes)
+    }
 }
 
 pub mod kem_decap {
