@@ -26,7 +26,8 @@ pub fn run_self_tests() -> SpdmResult {
             qe_cavs.extend_from_slice(cv.qe_cavs_y);
 
             let res;
-            if let Ok(my_private) = EphemeralPrivateKey::from_bytes_for_test(&ECDH_P256, cv.de_iut)
+            if let Ok(my_private) =
+                EphemeralPrivateKey::from_private_key_bytes(&ECDH_P256, cv.de_iut)
             {
                 let peer_public = UnparsedPublicKey::new(&ECDH_P256, &qe_cavs);
                 if let Ok(shared_secret) =
@@ -57,7 +58,8 @@ pub fn run_self_tests() -> SpdmResult {
             qe_cavs.extend_from_slice(cv.qe_cavs_y);
 
             let res;
-            if let Ok(my_private) = EphemeralPrivateKey::from_bytes_for_test(&ECDH_P384, cv.de_iut)
+            if let Ok(my_private) =
+                EphemeralPrivateKey::from_private_key_bytes(&ECDH_P384, cv.de_iut)
             {
                 let peer_public = UnparsedPublicKey::new(&ECDH_P384, &qe_cavs);
                 if let Ok(shared_secret) =

@@ -582,7 +582,7 @@ fn handle_algorithm_ecdhe(test_groups: &Vec<Value>) -> Vec<Value> {
                     let ephemeral_public_server_y =
                         from_hex(test["ephemeralPublicServerY"].as_str().unwrap()).unwrap();
 
-                    let private = EphemeralPrivateKey::from_bytes_for_test(
+                    let private = EphemeralPrivateKey::from_private_key_bytes(
                         curve,
                         ephemeral_private_iut.as_slice(),
                     )
