@@ -12,6 +12,7 @@ use bytes::{BufMut, BytesMut};
 
 pub static DEFAULT: SpdmDhe = SpdmDhe {
     generate_key_pair_cb: generate_key_pair,
+    import_private_key_cb: Some(import_private_key),
 };
 
 fn generate_key_pair(
@@ -24,7 +25,27 @@ fn generate_key_pair(
     }
 }
 
-struct SpdmDheKeyExchangeP256(ring::agreement::EphemeralPrivateKey);
+fn import_private_key(
+    dhe_algo: SpdmDheAlgo,
+    private_key_data: &[u8],
+) -> Option<Box<dyn SpdmDheKeyExchange + Send>> {
+    match dhe_algo {
+        SpdmDheAlgo::SECP_256_R1 => {
+            let key = SpdmDheKeyExchangeP256::from_private_key_bytes(private_key_data)?;
+            Some(Box::new(key))
+        }
+        SpdmDheAlgo::SECP_384_R1 => {
+            let key = SpdmDheKeyExchangeP384::from_private_key_bytes(private_key_data)?;
+            Some(Box::new(key))
+        }
+        _ => None,
+    }
+}
+
+struct SpdmDheKeyExchangeP256 {
+    private_key: ring::agreement::EphemeralPrivateKey,
+    private_key_bytes: alloc::vec::Vec<u8>, // For serialization
+}
 
 impl SpdmDheKeyExchange for SpdmDheKeyExchangeP256 {
     fn compute_final_key(
@@ -39,13 +60,17 @@ impl SpdmDheKeyExchange for SpdmDheKeyExchangeP256 {
             ring::agreement::UnparsedPublicKey::new(&ring::agreement::ECDH_P256, pubkey.as_ref());
         let mut final_key = BytesMutStrubbed::new();
         let agree_ephemeral_result =
-            ring::agreement::agree_ephemeral(self.0, &peer_public_key, |key_material| {
+            ring::agreement::agree_ephemeral(self.private_key, &peer_public_key, |key_material| {
                 final_key.extend_from_slice(key_material);
             });
         match agree_ephemeral_result {
             Ok(()) => Some(SpdmSharedSecretFinalKeyStruct::from(final_key)),
             Err(_) => None,
         }
+    }
+
+    fn export_private_key(&self) -> Option<alloc::vec::Vec<u8>> {
+        Some(self.private_key_bytes.clone())
     }
 }
 
@@ -55,16 +80,41 @@ impl SpdmDheKeyExchangeP256 {
         let private_key =
             ring::agreement::EphemeralPrivateKey::generate(&ring::agreement::ECDH_P256, &rng)
                 .ok()?;
+
+        // Store private key bytes for serialization
+        let private_key_bytes = private_key.export_private_key_bytes().to_vec();
+
         let public_key_old = private_key.compute_public_key().ok()?;
         let public_key = BytesMut::from(&public_key_old.as_ref()[1..]);
 
-        let res: Box<dyn SpdmDheKeyExchange + Send> = Box::new(Self(private_key));
+        let res: Box<dyn SpdmDheKeyExchange + Send> = Box::new(Self {
+            private_key,
+            private_key_bytes,
+        });
 
         Some((SpdmDheExchangeStruct::from(public_key), res))
     }
+
+    fn from_private_key_bytes(private_key_bytes: &[u8]) -> Option<Self> {
+        if private_key_bytes.len() != 32 {
+            return None;
+        }
+        let private_key = ring::agreement::EphemeralPrivateKey::from_bytes_for_test(
+            &ring::agreement::ECDH_P256,
+            private_key_bytes,
+        )
+        .ok()?;
+        Some(Self {
+            private_key,
+            private_key_bytes: private_key_bytes.to_vec(),
+        })
+    }
 }
 
-struct SpdmDheKeyExchangeP384(ring::agreement::EphemeralPrivateKey);
+struct SpdmDheKeyExchangeP384 {
+    private_key: ring::agreement::EphemeralPrivateKey,
+    private_key_bytes: alloc::vec::Vec<u8>, // For serialization
+}
 
 impl SpdmDheKeyExchange for SpdmDheKeyExchangeP384 {
     fn compute_final_key(
@@ -79,13 +129,17 @@ impl SpdmDheKeyExchange for SpdmDheKeyExchangeP384 {
             ring::agreement::UnparsedPublicKey::new(&ring::agreement::ECDH_P384, pubkey.as_ref());
         let mut final_key = BytesMutStrubbed::new();
         let agree_ephemeral_result =
-            ring::agreement::agree_ephemeral(self.0, &peer_public_key, |key_material| {
+            ring::agreement::agree_ephemeral(self.private_key, &peer_public_key, |key_material| {
                 final_key.extend_from_slice(key_material);
             });
         match agree_ephemeral_result {
             Ok(()) => Some(SpdmSharedSecretFinalKeyStruct::from(final_key)),
             Err(_) => None,
         }
+    }
+
+    fn export_private_key(&self) -> Option<alloc::vec::Vec<u8>> {
+        Some(self.private_key_bytes.clone())
     }
 }
 
@@ -95,12 +149,34 @@ impl SpdmDheKeyExchangeP384 {
         let private_key =
             ring::agreement::EphemeralPrivateKey::generate(&ring::agreement::ECDH_P384, &rng)
                 .ok()?;
+
+        // Store private key bytes for serialization
+        let private_key_bytes = private_key.export_private_key_bytes().to_vec();
+
         let public_key_old = private_key.compute_public_key().ok()?;
         let public_key = BytesMut::from(&public_key_old.as_ref()[1..]);
 
-        let res: Box<dyn SpdmDheKeyExchange + Send> = Box::new(Self(private_key));
+        let res: Box<dyn SpdmDheKeyExchange + Send> = Box::new(Self {
+            private_key,
+            private_key_bytes,
+        });
 
         Some((SpdmDheExchangeStruct::from(public_key), res))
+    }
+
+    fn from_private_key_bytes(private_key_bytes: &[u8]) -> Option<Self> {
+        if private_key_bytes.len() != 48 {
+            return None;
+        }
+        let private_key = ring::agreement::EphemeralPrivateKey::from_bytes_for_test(
+            &ring::agreement::ECDH_P384,
+            private_key_bytes,
+        )
+        .ok()?;
+        Some(Self {
+            private_key,
+            private_key_bytes: private_key_bytes.to_vec(),
+        })
     }
 }
 
