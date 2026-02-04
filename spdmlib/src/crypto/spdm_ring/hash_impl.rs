@@ -19,6 +19,8 @@ pub static DEFAULT: SpdmHash = SpdmHash {
     hash_ctx_update_cb: hash_ext::hash_ctx_update,
     hash_ctx_finalize_cb: hash_ext::hash_ctx_finalize,
     hash_ctx_dup_cb: hash_ext::hash_ctx_dup,
+    hash_ctx_serialize_cb: hash_ext::hash_ctx_serialize,
+    hash_ctx_deserialize_cb: hash_ext::hash_ctx_deserialize,
 };
 
 fn hash_all(base_hash_algo: SpdmBaseHashAlgo, data: &[u8]) -> Option<SpdmDigestStruct> {
@@ -87,6 +89,18 @@ mod hash_ext {
         let handle = handle_ptr as usize;
         HASH_CTX_TABLE.lock().insert(handle, value);
         handle
+    }
+
+    pub fn hash_ctx_serialize(handle: usize) -> Option<alloc::vec::Vec<u8>> {
+        let table = HASH_CTX_TABLE.lock();
+        let ctx = table.get(&handle)?;
+        Some((**ctx).to_bytes())
+    }
+
+    pub fn hash_ctx_deserialize(bytes: &[u8]) -> Option<usize> {
+        let ctx = HashCtxConcrete::from_bytes(bytes).ok()?;
+        let new_ctx = Box::new(ctx);
+        Some(insert_to_table(new_ctx))
     }
 }
 

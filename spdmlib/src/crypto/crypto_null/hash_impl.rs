@@ -16,6 +16,8 @@ pub static DEFAULT: SpdmHash = SpdmHash {
     hash_ctx_update_cb: hash_ext::hash_ctx_update,
     hash_ctx_finalize_cb: hash_ext::hash_ctx_finalize,
     hash_ctx_dup_cb: hash_ext::hash_ctx_dup,
+    hash_ctx_serialize_cb: hash_ext::hash_ctx_serialize,
+    hash_ctx_deserialize_cb: hash_ext::hash_ctx_deserialize,
 };
 
 fn hash_all(base_hash_algo: SpdmBaseHashAlgo, data: &[u8]) -> Option<SpdmDigestStruct> {
@@ -24,6 +26,7 @@ fn hash_all(base_hash_algo: SpdmBaseHashAlgo, data: &[u8]) -> Option<SpdmDigestS
 
 #[cfg(feature = "hashed-transcript-data")]
 mod hash_ext {
+    extern crate alloc;
     use crate::error::SpdmResult;
     use crate::protocol::{SpdmBaseHashAlgo, SpdmDigestStruct};
 
@@ -40,6 +43,14 @@ mod hash_ext {
     }
 
     pub fn hash_ctx_init(base_hash_algo: SpdmBaseHashAlgo) -> Option<usize> {
+        unimplemented!()
+    }
+
+    pub fn hash_ctx_serialize(handle: usize) -> Option<alloc::vec::Vec<u8>> {
+        unimplemented!()
+    }
+
+    pub fn hash_ctx_deserialize(bytes: &[u8]) -> Option<usize> {
         unimplemented!()
     }
 }
