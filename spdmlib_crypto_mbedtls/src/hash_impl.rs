@@ -29,6 +29,8 @@ mod hash_ext {
         hash_ctx_update_cb: hash_ctx_update,
         hash_ctx_finalize_cb: hash_ctx_finalize,
         hash_ctx_dup_cb: hash_ctx_dup,
+        hash_ctx_serialize_cb: hash_ctx_serialize,
+        hash_ctx_deserialize_cb: hash_ctx_deserialize,
     };
 
     pub(crate) fn hash_ctx_init(base_hash_algo: SpdmBaseHashAlgo) -> Option<usize> {
@@ -74,6 +76,19 @@ mod hash_ext {
         let handle = handle_ptr as usize;
         HASH_CTX_TABLE.lock().insert(handle, value);
         handle
+    }
+
+    // TODO: Implement proper serialization for mbedtls hash::Md
+    // This requires adding serialization support to the mbedtls-sys bindings
+    pub(crate) fn hash_ctx_serialize(handle: usize) -> Option<alloc::vec::Vec<u8>> {
+        // For now, return None to indicate serialization is not supported
+        // This will cause checkpoint/restore to fail for mbedtls backend
+        None
+    }
+
+    pub(crate) fn hash_ctx_deserialize(bytes: &[u8]) -> Option<usize> {
+        // For now, return None to indicate deserialization is not supported
+        None
     }
 
     #[allow(dead_code)]
