@@ -28,6 +28,8 @@ pub struct SpdmHash {
     pub hash_ctx_update_cb: fn(ctx: usize, data: &[u8]) -> SpdmResult,
     pub hash_ctx_finalize_cb: fn(ctx: usize) -> Option<SpdmDigestStruct>,
     pub hash_ctx_dup_cb: fn(ctx: usize) -> Option<usize>,
+    pub hash_ctx_serialize_cb: fn(ctx: usize) -> Option<alloc::vec::Vec<u8>>,
+    pub hash_ctx_deserialize_cb: fn(bytes: &[u8]) -> Option<usize>,
 }
 
 #[derive(Clone)]

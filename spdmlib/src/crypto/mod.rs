@@ -72,6 +72,7 @@ pub mod hash {
 
     #[cfg(feature = "hashed-transcript-data")]
     mod hash_ext {
+        extern crate alloc;
         use super::{SpdmBaseHashAlgo, SpdmDigestStruct, CRYPTO_HASH};
         use crate::error::SpdmResult;
         use codec::Codec;
@@ -94,12 +95,19 @@ pub mod hash {
 
         impl Codec for SpdmHashCtx {
             fn encode(&self, writer: &mut codec::Writer) -> Result<usize, codec::EncodeErr> {
-                (self.0 as u64).encode(writer)
+                let serialized = hash_ctx_serialize(self).ok_or(codec::EncodeErr {})?;
+                let len = serialized.len() as u16;
+                len.encode(writer)?;
+                writer
+                    .extend_from_slice(&serialized)
+                    .ok_or(codec::EncodeErr {})?;
+                Ok(2 + serialized.len())
             }
 
             fn read(reader: &mut codec::Reader) -> Option<Self> {
-                let handle = u64::read(reader)? as usize;
-                Some(SpdmHashCtx(handle))
+                let len = u16::read(reader)? as usize;
+                let bytes = reader.take(len)?;
+                hash_ctx_deserialize(bytes)
             }
         }
 
@@ -135,6 +143,21 @@ pub mod hash {
                 .expect("Functions should be registered before using")
                 .hash_ctx_dup_cb)(ctx.0)?;
             Some(SpdmHashCtx(ret))
+        }
+
+        pub fn hash_ctx_serialize(ctx: &SpdmHashCtx) -> Option<alloc::vec::Vec<u8>> {
+            (CRYPTO_HASH
+                .try_get_or_init(|| DEFAULT.clone())
+                .ok()?
+                .hash_ctx_serialize_cb)(ctx.0)
+        }
+
+        pub fn hash_ctx_deserialize(bytes: &[u8]) -> Option<SpdmHashCtx> {
+            let handle = (CRYPTO_HASH
+                .try_get_or_init(|| DEFAULT.clone())
+                .ok()?
+                .hash_ctx_deserialize_cb)(bytes)?;
+            Some(SpdmHashCtx(handle))
         }
 
         // - ring +transcript
