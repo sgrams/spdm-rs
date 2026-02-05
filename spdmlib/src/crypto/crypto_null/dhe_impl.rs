@@ -10,6 +10,7 @@ use crate::protocol::{SpdmDheAlgo, SpdmDheExchangeStruct};
 
 pub static DEFAULT: SpdmDhe = SpdmDhe {
     generate_key_pair_cb: generate_key_pair,
+    import_private_key_cb: None,
 };
 
 fn generate_key_pair(
