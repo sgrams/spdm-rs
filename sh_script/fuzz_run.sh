@@ -38,6 +38,9 @@ if [[ ! $PWD =~ spdm-rs$ ]]; then
     pushd ..
 fi
 
+echo "Applying pre-build patches..."
+bash sh_script/pre-build.sh
+
 if [ ! -d "fuzz-target/out" ]; then
     mkdir fuzz-target/out
 else # add rm mkdir:
