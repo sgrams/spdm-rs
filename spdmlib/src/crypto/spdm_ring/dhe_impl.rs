@@ -183,6 +183,7 @@ impl SpdmDheKeyExchangeP384 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use alloc::vec;
 
     #[test]
     fn test_case0_dhe() {
@@ -200,6 +201,199 @@ mod tests {
     fn test_case1_dhe() {
         for dhe_algo in [SpdmDheAlgo::empty()].iter() {
             assert_eq!(generate_key_pair(*dhe_algo).is_none(), true);
+        }
+    }
+
+    #[test]
+    fn test_serialize_deserialize_p256() {
+        // Generate a key pair
+        let (public_key, private_key_box) = generate_key_pair(SpdmDheAlgo::SECP_256_R1).unwrap();
+
+        // Export the private key
+        let private_key_bytes = private_key_box
+            .export_private_key()
+            .expect("Failed to export private key");
+
+        // Verify the exported key length
+        assert_eq!(
+            private_key_bytes.len(),
+            32,
+            "P256 private key should be 32 bytes"
+        );
+
+        // Re-import the private key
+        let restored_private_key = import_private_key(SpdmDheAlgo::SECP_256_R1, &private_key_bytes)
+            .expect("Failed to import private key");
+
+        // Generate a second key pair for testing key agreement
+        let (public_key2, private_key2) = generate_key_pair(SpdmDheAlgo::SECP_256_R1).unwrap();
+
+        // Compute shared secrets using original and restored keys
+        let shared_secret1 = private_key_box
+            .compute_final_key(&public_key2)
+            .expect("Failed to compute shared secret with original key");
+
+        let shared_secret2 = restored_private_key
+            .compute_final_key(&public_key2)
+            .expect("Failed to compute shared secret with restored key");
+
+        // Verify that both keys produce the same shared secret
+        assert_eq!(
+            shared_secret1.as_ref(),
+            shared_secret2.as_ref(),
+            "Shared secrets should match after serialization round-trip"
+        );
+
+        // Also verify the reverse direction
+        let shared_secret3 = private_key2
+            .compute_final_key(&public_key)
+            .expect("Failed to compute shared secret in reverse");
+
+        assert_eq!(
+            shared_secret1.as_ref(),
+            shared_secret3.as_ref(),
+            "Shared secrets should match in both directions"
+        );
+    }
+
+    #[test]
+    fn test_serialize_deserialize_p384() {
+        // Generate a key pair
+        let (public_key, private_key_box) = generate_key_pair(SpdmDheAlgo::SECP_384_R1).unwrap();
+
+        // Export the private key
+        let private_key_bytes = private_key_box
+            .export_private_key()
+            .expect("Failed to export private key");
+
+        // Verify the exported key length
+        assert_eq!(
+            private_key_bytes.len(),
+            48,
+            "P384 private key should be 48 bytes"
+        );
+
+        // Re-import the private key
+        let restored_private_key = import_private_key(SpdmDheAlgo::SECP_384_R1, &private_key_bytes)
+            .expect("Failed to import private key");
+
+        // Generate a second key pair for testing key agreement
+        let (public_key2, private_key2) = generate_key_pair(SpdmDheAlgo::SECP_384_R1).unwrap();
+
+        // Compute shared secrets using original and restored keys
+        let shared_secret1 = private_key_box
+            .compute_final_key(&public_key2)
+            .expect("Failed to compute shared secret with original key");
+
+        let shared_secret2 = restored_private_key
+            .compute_final_key(&public_key2)
+            .expect("Failed to compute shared secret with restored key");
+
+        // Verify that both keys produce the same shared secret
+        assert_eq!(
+            shared_secret1.as_ref(),
+            shared_secret2.as_ref(),
+            "Shared secrets should match after serialization round-trip"
+        );
+
+        // Also verify the reverse direction
+        let shared_secret3 = private_key2
+            .compute_final_key(&public_key)
+            .expect("Failed to compute shared secret in reverse");
+
+        assert_eq!(
+            shared_secret1.as_ref(),
+            shared_secret3.as_ref(),
+            "Shared secrets should match in both directions"
+        );
+    }
+
+    #[test]
+    fn test_import_invalid_key_length() {
+        // Test P256 with wrong length
+        let invalid_bytes_short = vec![0u8; 16];
+        assert!(
+            import_private_key(SpdmDheAlgo::SECP_256_R1, &invalid_bytes_short).is_none(),
+            "Should reject P256 key with invalid length"
+        );
+
+        let invalid_bytes_long = vec![0u8; 64];
+        assert!(
+            import_private_key(SpdmDheAlgo::SECP_256_R1, &invalid_bytes_long).is_none(),
+            "Should reject P256 key with invalid length"
+        );
+
+        // Test P384 with wrong length
+        let invalid_bytes_short = vec![0u8; 32];
+        assert!(
+            import_private_key(SpdmDheAlgo::SECP_384_R1, &invalid_bytes_short).is_none(),
+            "Should reject P384 key with invalid length"
+        );
+
+        let invalid_bytes_long = vec![0u8; 96];
+        assert!(
+            import_private_key(SpdmDheAlgo::SECP_384_R1, &invalid_bytes_long).is_none(),
+            "Should reject P384 key with invalid length"
+        );
+    }
+
+    #[test]
+    fn test_multiple_serialization_rounds() {
+        // Test that we can serialize and deserialize multiple times
+        for dhe_algo in [SpdmDheAlgo::SECP_256_R1, SpdmDheAlgo::SECP_384_R1].iter() {
+            let (public_key, mut private_key_box) =
+                generate_key_pair(*dhe_algo).expect("Failed to generate initial key pair");
+
+            // Perform multiple serialization/deserialization rounds
+            for round in 0..3 {
+                let private_key_bytes = private_key_box
+                    .export_private_key()
+                    .expect(&alloc::format!("Failed to export key in round {}", round));
+
+                private_key_box = import_private_key(*dhe_algo, &private_key_bytes)
+                    .expect(&alloc::format!("Failed to import key in round {}", round));
+            }
+
+            // Generate a peer key and verify the final key still works
+            let (peer_public_key, _) =
+                generate_key_pair(*dhe_algo).expect("Failed to generate peer key");
+
+            let shared_secret = private_key_box
+                .compute_final_key(&peer_public_key)
+                .expect("Failed to compute shared secret after multiple rounds");
+
+            assert!(
+                !shared_secret.as_ref().is_empty(),
+                "Shared secret should not be empty after multiple serialization rounds"
+            );
+        }
+    }
+
+    #[test]
+    fn test_export_consistency() {
+        // Verify that exporting the same key multiple times produces identical bytes
+        for dhe_algo in [SpdmDheAlgo::SECP_256_R1, SpdmDheAlgo::SECP_384_R1].iter() {
+            let (_public_key, private_key_box) =
+                generate_key_pair(*dhe_algo).expect("Failed to generate key pair");
+
+            let export1 = private_key_box
+                .export_private_key()
+                .expect("First export failed");
+            let export2 = private_key_box
+                .export_private_key()
+                .expect("Second export failed");
+            let export3 = private_key_box
+                .export_private_key()
+                .expect("Third export failed");
+
+            assert_eq!(
+                export1, export2,
+                "First and second exports should be identical"
+            );
+            assert_eq!(
+                export2, export3,
+                "Second and third exports should be identical"
+            );
         }
     }
 }
