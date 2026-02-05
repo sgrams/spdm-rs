@@ -149,4 +149,135 @@ mod tests {
         assert_eq!(&hellobuddy.as_ref(), &multi_part_hellobuddy.as_ref());
         assert_eq!(&hellobuddy.as_ref(), &multi_part_hellobuddy_twice.as_ref());
     }
+
+    #[cfg(feature = "hashed-transcript-data")]
+    #[test]
+    fn test_hash_ctx_serialization_roundtrip() {
+        use crate::codec::Codec;
+        use crate::crypto::hash::{hash_ctx_finalize, hash_ctx_init, hash_ctx_update};
+
+        // Test with SHA-256
+        let base_hash_algo = SpdmBaseHashAlgo::TPM_ALG_SHA_256;
+        let test_data = b"This is spdm-rs SHA256 de/serialization unit test string";
+
+        // Create and update a hash context
+        let ctx = hash_ctx_init(base_hash_algo).expect("Failed to initialize hash context");
+        hash_ctx_update(&ctx, test_data).expect("Failed to update hash context");
+
+        // Serialize the context
+        let mut buffer = [0u8; 1024];
+        let mut writer = crate::codec::Writer::init(&mut buffer);
+        ctx.encode(&mut writer)
+            .expect("Failed to encode hash context");
+        let serialized = writer.used_slice();
+
+        // Deserialize the context
+        let mut reader = crate::codec::Reader::init(serialized);
+        let deserialized_ctx = crate::crypto::SpdmHashCtx::read(&mut reader)
+            .expect("Failed to deserialize hash context");
+
+        // Complete the hash with more data
+        let more_data = b" and more data";
+        hash_ctx_update(&deserialized_ctx, more_data)
+            .expect("Failed to update deserialized context");
+
+        // Finalize and get the digest
+        let digest =
+            hash_ctx_finalize(deserialized_ctx).expect("Failed to finalize deserialized context");
+
+        // Verify against a fresh hash of all data at once
+        let mut all_data = test_data.to_vec();
+        all_data.extend_from_slice(more_data);
+        let expected = hash_all(base_hash_algo, &all_data).expect("Failed to hash all data");
+
+        assert_eq!(digest.data_size, expected.data_size);
+        assert_eq!(
+            &digest.data[..digest.data_size as usize],
+            &expected.data[..expected.data_size as usize]
+        );
+    }
+
+    #[cfg(feature = "hashed-transcript-data")]
+    #[test]
+    fn test_hash_ctx_serialization_roundtrip_sha384() {
+        use crate::codec::Codec;
+        use crate::crypto::hash::{hash_ctx_finalize, hash_ctx_init, hash_ctx_update};
+
+        // Test with SHA-384
+        let base_hash_algo = SpdmBaseHashAlgo::TPM_ALG_SHA_384;
+        let test_data = b"This is spdm-rs SHA384 de/serialization unit test string";
+
+        // Create and update a hash context
+        let ctx = hash_ctx_init(base_hash_algo).expect("Failed to initialize hash context");
+        hash_ctx_update(&ctx, test_data).expect("Failed to update hash context");
+
+        // Serialize the context
+        let mut buffer = [0u8; 1024];
+        let mut writer = crate::codec::Writer::init(&mut buffer);
+        ctx.encode(&mut writer)
+            .expect("Failed to encode hash context");
+        let serialized = writer.used_slice();
+
+        // Deserialize the context
+        let mut reader = crate::codec::Reader::init(serialized);
+        let deserialized_ctx = crate::crypto::SpdmHashCtx::read(&mut reader)
+            .expect("Failed to deserialize hash context");
+
+        // Finalize the deserialized context
+        let digest =
+            hash_ctx_finalize(deserialized_ctx).expect("Failed to finalize deserialized context");
+
+        // Verify against a fresh hash of all data
+        let expected = hash_all(base_hash_algo, test_data).expect("Failed to hash all data");
+
+        assert_eq!(digest.data_size, expected.data_size);
+        assert_eq!(
+            &digest.data[..digest.data_size as usize],
+            &expected.data[..expected.data_size as usize]
+        );
+    }
+
+    #[cfg(feature = "hashed-transcript-data")]
+    #[test]
+    fn test_hash_ctx_serialization_roundtrip_sha512() {
+        use crate::codec::Codec;
+        use crate::crypto::hash::{hash_ctx_finalize, hash_ctx_init, hash_ctx_update};
+
+        // Test with SHA-512
+        let base_hash_algo = SpdmBaseHashAlgo::TPM_ALG_SHA_512;
+        let test_data = b"This is spdm-rs SHA512 de/serialization unit test string";
+
+        // Create and update a hash context
+        let ctx = hash_ctx_init(base_hash_algo).expect("Failed to initialize hash context");
+        hash_ctx_update(&ctx, &test_data[..20]).expect("Failed to update hash context");
+
+        // Serialize the context
+        let mut buffer = [0u8; 1024];
+        let mut writer = crate::codec::Writer::init(&mut buffer);
+        ctx.encode(&mut writer)
+            .expect("Failed to encode hash context");
+        let serialized = writer.used_slice();
+
+        // Deserialize the context
+        let mut reader = crate::codec::Reader::init(serialized);
+        let deserialized_ctx = crate::crypto::SpdmHashCtx::read(&mut reader)
+            .expect("Failed to deserialize hash context");
+
+        // Continue hashing with the rest of the data
+        hash_ctx_update(&deserialized_ctx, &test_data[20..])
+            .expect("Failed to update deserialized context");
+
+        // Finalize the deserialized context
+        let digest =
+            hash_ctx_finalize(deserialized_ctx).expect("Failed to finalize deserialized context");
+
+        // Verify against a fresh hash of all data
+        let expected = hash_all(base_hash_algo, test_data).expect("Failed to hash all data");
+
+        assert_eq!(digest.data_size, expected.data_size);
+        assert_eq!(
+            &digest.data[..digest.data_size as usize],
+            &expected.data[..expected.data_size as usize]
+        );
+    }
 }
