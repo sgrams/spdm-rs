@@ -3,7 +3,7 @@
 name: RUN CODE
 
 env:
-  RUST_TOOLCHAIN: 1.83.0
+  RUST_TOOLCHAIN: 1.93.0
   TOOLCHAIN_PROFILE: minimal
 
 # Controls when the action will run.

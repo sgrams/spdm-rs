@@ -3,7 +3,7 @@ on: [push, pull_request]
 name: Nightly lints
 
 env:
-  RUST_TOOLCHAIN: 1.83.0
+  RUST_TOOLCHAIN: 1.93.0
   TOOLCHAIN_PROFILE: minimal
 
 permissions:
