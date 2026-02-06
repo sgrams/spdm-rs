@@ -74,10 +74,12 @@ impl Codec for InterfaceId {
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
+#[derive(Default)]
 pub enum TdiState {
     RUN,
     ERROR,
     CONFIG_LOCKED,
+    #[default]
     CONFIG_UNLOCKED,
 }
 
@@ -108,12 +110,6 @@ impl TryFrom<u8> for TdiState {
             3 => Ok(Self::ERROR),
             4_u8..=u8::MAX => Err(()),
         }
-    }
-}
-
-impl Default for TdiState {
-    fn default() -> Self {
-        Self::CONFIG_UNLOCKED
     }
 }
 

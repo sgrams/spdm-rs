@@ -127,7 +127,7 @@ impl Codec for QueryRespDataObject {
         let max_port_index = u8::read(r)?;
 
         let left = r.left();
-        if left % 4 != 0 {
+        if !left.is_multiple_of(4) {
             return None;
         }
 
@@ -262,19 +262,14 @@ impl Codec for KeyProgDataObject {
 }
 
 #[allow(non_camel_case_types)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
 pub enum KpAckStatus {
     SUCCESS,
     INCORRECT_LENGTH,
     UNSUPPORTED_PORT_INDEX,
     UNSUPPORTED_VALUE,
+    #[default]
     UNSPECIFIED_FAILURE,
-}
-
-impl Default for KpAckStatus {
-    fn default() -> Self {
-        Self::UNSPECIFIED_FAILURE
-    }
 }
 
 impl From<KpAckStatus> for u8 {

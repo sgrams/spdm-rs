@@ -5,19 +5,14 @@
 use codec::{Codec, EncodeErr};
 use core::convert::TryFrom;
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Default)]
 pub enum SpdmVersion {
+    #[default]
     SpdmVersion10,
     SpdmVersion11,
     SpdmVersion12,
     SpdmVersion13,
     SpdmVersion14,
-}
-
-impl Default for SpdmVersion {
-    fn default() -> Self {
-        Self::SpdmVersion10
-    }
 }
 
 impl TryFrom<u8> for SpdmVersion {
