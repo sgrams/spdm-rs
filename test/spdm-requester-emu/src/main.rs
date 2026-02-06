@@ -1519,12 +1519,12 @@ fn emu_main_inner() {
 
     let socket: Arc<Mutex<TcpStream>> = Arc::new(Mutex::new(socket));
 
-    let pcidoe_transport_encap: Arc<Mutex<(dyn SpdmTransportEncap + Send + Sync)>> =
+    let pcidoe_transport_encap: Arc<Mutex<dyn SpdmTransportEncap + Send + Sync>> =
         Arc::new(Mutex::new(PciDoeTransportEncap {}));
-    let mctp_transport_encap: Arc<Mutex<(dyn SpdmTransportEncap + Send + Sync)>> =
+    let mctp_transport_encap: Arc<Mutex<dyn SpdmTransportEncap + Send + Sync>> =
         Arc::new(Mutex::new(MctpTransportEncap {}));
 
-    let transport_encap: Arc<Mutex<(dyn SpdmTransportEncap + Send + Sync)>> = if USE_PCIDOE {
+    let transport_encap: Arc<Mutex<dyn SpdmTransportEncap + Send + Sync>> = if USE_PCIDOE {
         pcidoe_transport_encap
     } else {
         mctp_transport_encap

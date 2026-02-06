@@ -174,9 +174,9 @@ fn emu_main_inner() {
     let listener = TcpListener::bind("127.0.0.1:2323").expect("Couldn't bind to the server");
     println!("server start!");
 
-    let pcidoe_transport_encap: Arc<Mutex<(dyn SpdmTransportEncap + Send + Sync)>> =
+    let pcidoe_transport_encap: Arc<Mutex<dyn SpdmTransportEncap + Send + Sync>> =
         Arc::new(Mutex::new(PciDoeTransportEncap {}));
-    let mctp_transport_encap: Arc<Mutex<(dyn SpdmTransportEncap + Send + Sync)>> =
+    let mctp_transport_encap: Arc<Mutex<dyn SpdmTransportEncap + Send + Sync>> =
         Arc::new(Mutex::new(MctpTransportEncap {}));
 
     if let Some(stream) = listener.incoming().next() {
