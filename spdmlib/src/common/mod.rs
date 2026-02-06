@@ -606,15 +606,10 @@ impl SpdmContext {
                         session.runtime_info.digest_context_th.as_mut().unwrap(),
                         &vdm_transcript.1[..vdm_transcript.0],
                     )?;
-                } else if session.runtime_info.rsp_cert_hash.is_some() {
+                } else if let Some(cert_hash) = &session.runtime_info.rsp_cert_hash {
                     crypto::hash::hash_ctx_update(
                         session.runtime_info.digest_context_th.as_mut().unwrap(),
-                        session
-                            .runtime_info
-                            .rsp_cert_hash
-                            .as_ref()
-                            .unwrap()
-                            .as_ref(),
+                        cert_hash.as_ref(),
                     )?;
                 }
             }
@@ -2240,17 +2235,12 @@ impl Codec for ManagedVdmBuffer {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Default)]
 pub enum SpdmMeasurementContentChanged {
+    #[default]
     NotSupported,
     DetectedChange,
     NoChange,
-}
-
-impl Default for SpdmMeasurementContentChanged {
-    fn default() -> Self {
-        Self::NotSupported
-    }
 }
 
 impl Codec for SpdmMeasurementContentChanged {

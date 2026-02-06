@@ -10,16 +10,11 @@ use core::{
 /// Reference: https://github.com/DMTF/libspdm/blob/main/include/library/spdm_return_status.h
 #[repr(u8)]
 #[allow(dead_code)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub enum StatusSeverity {
     SUCCESS = 0,
+    #[default]
     ERROR = 8,
-}
-
-impl Default for StatusSeverity {
-    fn default() -> Self {
-        Self::ERROR
-    }
 }
 
 impl TryFrom<u8> for StatusSeverity {
@@ -37,9 +32,10 @@ impl TryFrom<u8> for StatusSeverity {
 #[repr(u16)]
 #[allow(dead_code)]
 #[allow(non_camel_case_types)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub enum StatusCodeCore {
     SUCCESS = 0,
+    #[default]
     INVALID_PARAMETER = 1,
     UNSUPPORTED_CAP = 2,
     INVALID_STATE_LOCAL = 3,
@@ -91,17 +87,12 @@ impl TryFrom<u16> for StatusCodeCore {
     }
 }
 
-impl Default for StatusCodeCore {
-    fn default() -> Self {
-        Self::INVALID_PARAMETER
-    }
-}
-
 #[repr(u16)]
 #[allow(dead_code)]
 #[allow(non_camel_case_types)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub enum StatusCodeCrypto {
+    #[default]
     CRYPTO_ERROR = 0,
     VERIF_FAIL = 1,
     SEQUENCE_NUMBER_OVERFLOW = 2,
@@ -124,17 +115,12 @@ impl TryFrom<u16> for StatusCodeCrypto {
     }
 }
 
-impl Default for StatusCodeCrypto {
-    fn default() -> Self {
-        Self::CRYPTO_ERROR
-    }
-}
-
 #[repr(u16)]
 #[allow(dead_code)]
 #[allow(non_camel_case_types)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub enum StatusCodeCertParse {
+    #[default]
     INVALID_CERT = 0,
 }
 
@@ -149,17 +135,12 @@ impl TryFrom<u16> for StatusCodeCertParse {
     }
 }
 
-impl Default for StatusCodeCertParse {
-    fn default() -> Self {
-        Self::INVALID_CERT
-    }
-}
-
 #[repr(u16)]
 #[allow(dead_code)]
 #[allow(non_camel_case_types)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub enum StatusCodeTransport {
+    #[default]
     SEND_FAIL = 0,
     RECEIVE_FAIL = 1,
 
@@ -186,18 +167,13 @@ impl TryFrom<u16> for StatusCodeTransport {
     }
 }
 
-impl Default for StatusCodeTransport {
-    fn default() -> Self {
-        Self::SEND_FAIL
-    }
-}
-
 #[repr(u16)]
 #[allow(dead_code)]
 #[allow(non_camel_case_types)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub enum StatusCodeMeasCollect {
     MEAS_INVALID_INDEX = 0,
+    #[default]
     MEAS_INTERNAL_ERROR = 1,
 }
 
@@ -213,17 +189,12 @@ impl TryFrom<u16> for StatusCodeMeasCollect {
     }
 }
 
-impl Default for StatusCodeMeasCollect {
-    fn default() -> Self {
-        Self::MEAS_INTERNAL_ERROR
-    }
-}
-
 #[repr(u16)]
 #[allow(dead_code)]
 #[allow(non_camel_case_types)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub enum StatusCodeRNG {
+    #[default]
     LOW_ENTROPY = 0,
 }
 
@@ -235,12 +206,6 @@ impl TryFrom<u16> for StatusCodeRNG {
             0 => Ok(Self::LOW_ENTROPY),
             _ => Err(()),
         }
-    }
-}
-
-impl Default for StatusCodeRNG {
-    fn default() -> Self {
-        Self::LOW_ENTROPY
     }
 }
 
