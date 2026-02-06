@@ -381,23 +381,21 @@ impl SpdmContext {
 
         #[cfg(feature = "hashed-transcript-data")]
         {
-            if self.runtime_info.digest_context_m1m2.is_none() {
+            let is_empty_context = self.runtime_info.digest_context_m1m2.is_none();
+            if is_empty_context {
                 self.runtime_info.digest_context_m1m2 =
                     crypto::hash::hash_ctx_init(self.negotiate_info.base_hash_sel);
                 if self.runtime_info.digest_context_m1m2.is_none() {
                     return Err(SPDM_STATUS_INVALID_STATE_LOCAL);
                 }
-
-                crypto::hash::hash_ctx_update(
-                    self.runtime_info.digest_context_m1m2.as_mut().unwrap(),
-                    self.runtime_info.message_a.as_ref(),
-                )?;
             }
 
-            crypto::hash::hash_ctx_update(
-                self.runtime_info.digest_context_m1m2.as_mut().unwrap(),
-                new_message,
-            )?;
+            if let Some(ctx) = self.runtime_info.digest_context_m1m2.as_mut() {
+                if is_empty_context {
+                    crypto::hash::hash_ctx_update(ctx, self.runtime_info.message_a.as_ref())?;
+                }
+                crypto::hash::hash_ctx_update(ctx, new_message)?;
+            }
         }
 
         Ok(())
@@ -425,23 +423,21 @@ impl SpdmContext {
 
         #[cfg(feature = "hashed-transcript-data")]
         {
-            if self.runtime_info.digest_context_m1m2.is_none() {
+            let is_empty_context = self.runtime_info.digest_context_m1m2.is_none();
+            if is_empty_context {
                 self.runtime_info.digest_context_m1m2 =
                     crypto::hash::hash_ctx_init(self.negotiate_info.base_hash_sel);
                 if self.runtime_info.digest_context_m1m2.is_none() {
                     return Err(SPDM_STATUS_CRYPTO_ERROR);
                 }
-
-                crypto::hash::hash_ctx_update(
-                    self.runtime_info.digest_context_m1m2.as_mut().unwrap(),
-                    self.runtime_info.message_a.as_ref(),
-                )?;
             }
 
-            crypto::hash::hash_ctx_update(
-                self.runtime_info.digest_context_m1m2.as_mut().unwrap(),
-                new_message,
-            )?;
+            if let Some(ctx) = self.runtime_info.digest_context_m1m2.as_mut() {
+                if is_empty_context {
+                    crypto::hash::hash_ctx_update(ctx, self.runtime_info.message_a.as_ref())?;
+                }
+                crypto::hash::hash_ctx_update(ctx, new_message)?;
+            }
         }
 
         Ok(())
@@ -493,46 +489,43 @@ impl SpdmContext {
                     } else {
                         return Err(SPDM_STATUS_INVALID_STATE_LOCAL);
                     };
-                    if session.runtime_info.digest_context_l1l2.is_none() {
+                    let is_empty_context = session.runtime_info.digest_context_l1l2.is_none();
+                    if is_empty_context {
                         session.runtime_info.digest_context_l1l2 =
                             crypto::hash::hash_ctx_init(base_hash_sel);
                         if session.runtime_info.digest_context_l1l2.is_none() {
                             return Err(SPDM_STATUS_CRYPTO_ERROR);
                         }
-
-                        if spdm_version_sel >= SpdmVersion::SpdmVersion12 {
-                            crypto::hash::hash_ctx_update(
-                                session.runtime_info.digest_context_l1l2.as_mut().unwrap(),
-                                message_a.as_ref(),
-                            )?;
-                        }
                     }
 
-                    crypto::hash::hash_ctx_update(
-                        session.runtime_info.digest_context_l1l2.as_mut().unwrap(),
-                        new_message,
-                    )?;
+                    if let Some(ctx) = session.runtime_info.digest_context_l1l2.as_mut() {
+                        if is_empty_context && spdm_version_sel >= SpdmVersion::SpdmVersion12 {
+                            crypto::hash::hash_ctx_update(ctx, message_a.as_ref())?;
+                        }
+                        crypto::hash::hash_ctx_update(ctx, new_message)?;
+                    }
                 }
                 None => {
-                    if self.runtime_info.digest_context_l1l2.is_none() {
+                    let is_empty_context = self.runtime_info.digest_context_l1l2.is_none();
+                    if is_empty_context {
                         self.runtime_info.digest_context_l1l2 =
                             crypto::hash::hash_ctx_init(self.negotiate_info.base_hash_sel);
                         if self.runtime_info.digest_context_l1l2.is_none() {
                             return Err(SPDM_STATUS_CRYPTO_ERROR);
                         }
+                    }
 
-                        if self.negotiate_info.spdm_version_sel >= SpdmVersion::SpdmVersion12 {
+                    if let Some(ctx) = self.runtime_info.digest_context_l1l2.as_mut() {
+                        if is_empty_context
+                            && self.negotiate_info.spdm_version_sel >= SpdmVersion::SpdmVersion12
+                        {
                             crypto::hash::hash_ctx_update(
-                                self.runtime_info.digest_context_l1l2.as_mut().unwrap(),
+                                ctx,
                                 self.runtime_info.message_a.as_ref(),
                             )?;
                         }
+                        crypto::hash::hash_ctx_update(ctx, new_message)?;
                     }
-
-                    crypto::hash::hash_ctx_update(
-                        self.runtime_info.digest_context_l1l2.as_mut().unwrap(),
-                        new_message,
-                    )?;
                 }
             }
         }
@@ -593,12 +586,17 @@ impl SpdmContext {
 
         #[cfg(feature = "hashed-transcript-data")]
         {
+            let mut first_update = false;
             if session.runtime_info.digest_context_th.is_none() {
                 session.runtime_info.digest_context_th =
                     crypto::hash::hash_ctx_init(session.get_crypto_param().base_hash_algo);
                 if session.runtime_info.digest_context_th.is_none() {
                     return Err(SPDM_STATUS_CRYPTO_ERROR);
                 }
+                first_update = true;
+            }
+
+            if first_update {
                 crypto::hash::hash_ctx_update(
                     session.runtime_info.digest_context_th.as_mut().unwrap(),
                     session.runtime_info.message_a.as_ref(),
