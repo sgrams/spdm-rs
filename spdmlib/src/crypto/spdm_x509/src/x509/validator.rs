@@ -489,12 +489,14 @@ impl<B: CryptoBackend> Validator<B> {
     }
 
     /// Verify that an issuer certificate is a CA.
+    ///
+    /// Per SPDM 1.2 (DSP0274), the BasicConstraints extension is not required
+    /// to be present.  If it *is* present the cA flag must be TRUE; if it is
+    /// absent the certificate is still accepted as a valid issuer.
     fn verify_issuer_is_ca(&self, issuer: &Certificate, depth: usize) -> Result<()> {
         let extensions = match &issuer.tbs_certificate.extensions {
             Some(exts) => exts,
-            None => {
-                return Err(Error::ChainError(crate::error::ChainError::IssuerNotCA));
-            }
+            None => return Ok(()),
         };
 
         for ext in &extensions.extensions {
@@ -519,7 +521,8 @@ impl<B: CryptoBackend> Validator<B> {
             }
         }
 
-        Err(Error::ChainError(crate::error::ChainError::IssuerNotCA))
+        // BasicConstraints extension not present — acceptable per SPDM 1.2.
+        Ok(())
     }
 
     /// Validate path length constraints in the chain.
